@@ -11,8 +11,8 @@ import SwiftData
 @main
 struct WhiteStockerApp: App {
     var sharedModelContainer: ModelContainer = {
+        // TODO: Step 2でTask / Placementモデルを実装したらここに追加する
         let schema = Schema([
-            Item.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
