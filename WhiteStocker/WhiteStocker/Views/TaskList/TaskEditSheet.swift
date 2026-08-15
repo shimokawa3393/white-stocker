@@ -48,7 +48,7 @@ struct TaskEditSheet: View {
                                 .allowsHitTesting(false)
                         }
                         TextEditor(text: $memo)
-                            .frame(minHeight: 100, maxHeight: 160)
+                            .frame(minHeight: 70, maxHeight: 120)
                     }
                 }
                 Section("所要時間") {

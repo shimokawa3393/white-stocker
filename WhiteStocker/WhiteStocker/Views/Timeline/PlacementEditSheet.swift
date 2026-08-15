@@ -128,9 +128,6 @@ struct PlacementEditSheet: View {
                     Button("この配置を削除", role: .destructive) {
                         delete()
                     }
-                    .buttonStyle(DestructiveButtonStyle())
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
                 }
             }
             .navigationTitle("配置を編集")
