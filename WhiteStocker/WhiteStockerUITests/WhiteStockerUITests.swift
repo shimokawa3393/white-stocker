@@ -10,32 +10,119 @@ import XCTest
 final class WhiteStockerUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
 
     @MainActor
     func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()
         }
+    }
+
+    /// v0コアループの一連動線を通し確認する：
+    /// Task登録 → タイムライン配置 → Rowまたぎ配置 → 編集 → 削除
+    ///
+    /// NOTE: シート表示アニメーションのタイミングに依存する箇所があり、現状flaky
+    /// （実行環境によってタイムアウトすることがある）。2026-08-15時点でTask登録〜配置までは
+    /// 手動確認・過去の実行結果で動作を確認済み。安定化する場合はwaitForExistenceの
+    /// タイムアウト調整、またはシート表示完了を待つ別の同期手段を検討すること。
+    @MainActor
+    func testCoreLoop() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-com.apple.CoreData.SQLDebug", "0"]
+        app.launch()
+
+        attach(app, name: "01_起動直後")
+
+        // --- タスクを2件登録 ---
+        app.buttons["タスク一覧"].tap()
+        addTask(app, name: "テスト掃除", quickDurationLabel: "30分")
+        addTask(app, name: "テスト運動", quickDurationLabel: "60分")
+        attach(app, name: "02_タスク一覧登録後")
+
+        // タスク一覧シートを閉じ、確実に閉じ切るまで待つ
+        app.swipeDown(velocity: .fast)
+        let taskListNavBar = app.navigationBars["タスク一覧"]
+        let taskListGone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: taskListNavBar)
+        wait(for: [taskListGone], timeout: 5)
+
+        // --- 10:00のRowに「テスト掃除」を配置（空きスロット1件→自動でタスク選択へ） ---
+        let row10 = app.staticTexts["timeline-row-10"]
+        XCTAssertTrue(row10.waitForExistence(timeout: 5), "Row 10:00 が見つからない")
+        row10.tap()
+
+        XCTAssertTrue(app.buttons["テスト掃除"].waitForExistence(timeout: 5), "タスク選択画面に「テスト掃除」が無い")
+        app.buttons["テスト掃除"].tap()
+
+        XCTAssertTrue(app.buttons["配置する"].waitForExistence(timeout: 5))
+        app.buttons["配置する"].tap()
+
+        attach(app, name: "03_一つ目の配置後(10:00-10:30)")
+
+        // --- 同じRowを再タップ。残りの空き(10:30-11:00)に「テスト運動」を60分で配置
+        //     → 10:30+60分=11:30となりRow10とRow11をまたぐ配置になる ---
+        XCTAssertTrue(row10.waitForExistence(timeout: 5))
+        row10.tap()
+
+        XCTAssertTrue(app.buttons["テスト運動"].waitForExistence(timeout: 5), "タスク選択画面に「テスト運動」が無い")
+        app.buttons["テスト運動"].tap()
+
+        XCTAssertTrue(app.buttons["配置する"].waitForExistence(timeout: 5))
+        app.buttons["配置する"].tap()
+
+        attach(app, name: "04_Rowまたぎ配置後(10:30-11:30)")
+
+        // --- 配置ブロック「テスト掃除」をタップして編集し、開始時刻を+15分ずらして保存 ---
+        let firstBlock = app.staticTexts["テスト掃除"]
+        XCTAssertTrue(firstBlock.waitForExistence(timeout: 5), "配置ブロック「テスト掃除」が見つからない")
+        firstBlock.tap()
+
+        XCTAssertTrue(app.navigationBars["配置を編集"].waitForExistence(timeout: 5))
+        app.buttons["plus.circle"].tap()
+        app.buttons["保存"].tap()
+
+        attach(app, name: "05_編集後(開始時刻+15分)")
+
+        // --- 「テスト運動」の配置ブロックをタップして削除 ---
+        let secondBlock = app.staticTexts["テスト運動"]
+        XCTAssertTrue(secondBlock.waitForExistence(timeout: 5), "配置ブロック「テスト運動」が見つからない")
+        secondBlock.tap()
+
+        XCTAssertTrue(app.navigationBars["配置を編集"].waitForExistence(timeout: 5))
+        app.buttons["この配置を削除"].tap()
+
+        attach(app, name: "06_削除後")
+
+        XCTAssertFalse(app.staticTexts["テスト運動"].waitForExistence(timeout: 3), "削除したはずの「テスト運動」がまだ表示されている")
+    }
+
+    @MainActor
+    private func addTask(_ app: XCUIApplication, name: String, quickDurationLabel: String) {
+        app.buttons["タスクを追加"].tap()
+        XCTAssertTrue(app.textFields["タスク名"].waitForExistence(timeout: 5))
+        app.textFields["タスク名"].tap()
+        app.textFields["タスク名"].typeText(name)
+
+        // 所要時間はwheel pickerのデフォルト値(30分)のまま、または指定ラベルに合わせて調整。
+        // v0では新規タスクのデフォルトは30分なので、60分が必要な場合だけ調整する。
+        if quickDurationLabel == "60分" {
+            let picker = app.pickerWheels.firstMatch
+            if picker.waitForExistence(timeout: 3) {
+                picker.adjust(toPickerWheelValue: "1時間")
+            }
+        }
+
+        app.buttons["保存"].tap()
+    }
+
+    private func attach(_ app: XCUIApplication, name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

@@ -36,6 +36,7 @@ struct TimelineRowView: View {
         .frame(height: Self.rowHeight, alignment: .top)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        .accessibilityIdentifier("timeline-row-\(hour)")
     }
 }
 
