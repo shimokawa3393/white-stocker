@@ -1,0 +1,84 @@
+//
+//  TimelineView.swift
+//  WhiteStocker
+//
+//  ホーム画面。縦は1時間刻みRow（ScrollView）、横は日付ページング（TabView.page）。
+//  カレンダーピッカー等の遠距離ジャンプは持たない（横スクロールのみ、設計書で明示的に不採用）。
+//
+//  この段階（Step4）ではPlacementの配置ブロック描画・タップ配置フローはまだ無い。
+//  表示のみで、配置ゼロの見た目を作る。配置ブロックはStep6（PlacementBlockView）で追加する。
+//
+
+import SwiftUI
+import SwiftData
+
+struct TimelineView: View {
+    /// 前後365日をページング範囲とする（無限スクロールは不採用、有限範囲で十分と判断）
+    private let dayOffsetRange = Array(-365...365)
+
+    @State private var selectedOffset: Int = 0
+    @State private var isPresentingTaskList = false
+
+    var body: some View {
+        NavigationStack {
+            TabView(selection: $selectedOffset) {
+                ForEach(dayOffsetRange, id: \.self) { offset in
+                    DayTimelineView(date: date(for: offset))
+                        .tag(offset)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .navigationTitle(titleText)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        isPresentingTaskList = true
+                    } label: {
+                        Label("タスク一覧", systemImage: "list.bullet")
+                    }
+                }
+            }
+            .sheet(isPresented: $isPresentingTaskList) {
+                TaskListView()
+            }
+        }
+    }
+
+    private var titleText: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "M月d日(E)"
+        return formatter.string(from: date(for: selectedOffset))
+    }
+
+    private func date(for offset: Int) -> Date {
+        Calendar.current.date(
+            byAdding: .day,
+            value: offset,
+            to: Calendar.current.startOfDay(for: .now)
+        ) ?? .now
+    }
+}
+
+/// 1日分のタイムライン（0:00〜23:00の24Row、縦スクロール）
+private struct DayTimelineView: View {
+    let date: Date
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(0..<24, id: \.self) { hour in
+                    TimelineRowView(hour: hour)
+                }
+            }
+            // TODO: Step6でこのZStack上にPlacementBlockViewを絶対配置で重ねる
+            // （「タップ判定＝1Row」と「見た目＝時間軸比例配置」を分離するため）
+        }
+    }
+}
+
+#Preview {
+    TimelineView()
+        .modelContainer(for: [TaskItem.self, Placement.self], inMemory: true)
+}
