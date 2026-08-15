@@ -15,17 +15,24 @@ struct TimelineRowView: View {
     static let rowHeight: CGFloat = 60
     /// 時刻ラベル幅 + spacing。PlacementBlockViewのcontentLeadingInsetと一致させる。
     static let labelWidth: CGFloat = 44
-    static let labelSpacing: CGFloat = 8
+    static let labelSpacing: CGFloat = Spacing.sm
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            // 罫線はRow上端（=正確にその時刻）にぴったり合わせる。
+            // 正時の罫線はRow上端（=正確にその時刻）にぴったり合わせる。
             // PlacementBlockViewのY座標計算がこの位置を基準にしているため、
             // ここにpaddingを掛けるとブロックの表示位置とズレる。
             Rectangle()
-                .fill(Color.secondary.opacity(0.2))
+                .fill(AppColor.divider)
                 .frame(height: 1)
                 .padding(.leading, Self.labelWidth + Self.labelSpacing)
+
+            // 30分位置の補助線（正時より控えめに）
+            Rectangle()
+                .fill(AppColor.divider.opacity(0.5))
+                .frame(height: 1)
+                .padding(.leading, Self.labelWidth + Self.labelSpacing)
+                .offset(y: Self.rowHeight / 2)
 
             Text(String(format: "%02d:00", hour))
                 .font(.caption2)

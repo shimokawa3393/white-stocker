@@ -19,8 +19,6 @@ struct TaskEditSheet: View {
     @State private var memo: String
     @State private var durationMin: Int
 
-    private let durationRange = stride(from: 15, through: 480, by: 15).map { $0 }
-
     init(editingTask: TaskItem? = nil) {
         self.editingTask = editingTask
         _name = State(initialValue: editingTask?.name ?? "")
@@ -45,8 +43,8 @@ struct TaskEditSheet: View {
                         if memo.isEmpty {
                             Text("メモ（任意）")
                                 .foregroundStyle(.tertiary)
-                                .padding(.top, 8)
-                                .padding(.leading, 4)
+                                .padding(.top, Spacing.sm)
+                                .padding(.leading, Spacing.xs)
                                 .allowsHitTesting(false)
                         }
                         TextEditor(text: $memo)
@@ -55,8 +53,8 @@ struct TaskEditSheet: View {
                 }
                 Section("所要時間") {
                     Picker("所要時間", selection: $durationMin) {
-                        ForEach(durationRange, id: \.self) { minutes in
-                            Text(durationLabel(minutes)).tag(minutes)
+                        ForEach(DurationFormatter.range, id: \.self) { minutes in
+                            Text(DurationFormatter.label(minutes)).tag(minutes)
                         }
                     }
                     .pickerStyle(.wheel)
@@ -74,15 +72,6 @@ struct TaskEditSheet: View {
                 }
             }
         }
-    }
-
-    private func durationLabel(_ minutes: Int) -> String {
-        if minutes < 60 {
-            return "\(minutes)分"
-        }
-        let hours = minutes / 60
-        let remainder = minutes % 60
-        return remainder == 0 ? "\(hours)時間" : "\(hours)時間\(remainder)分"
     }
 
     private func save() {

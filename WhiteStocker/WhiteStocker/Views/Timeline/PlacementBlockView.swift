@@ -39,24 +39,32 @@ struct PlacementBlockView: View {
     }
 
     var body: some View {
-        HStack(spacing: 4) {
-            Text(placement.task.name)
-                .font(.caption)
-                .fontWeight(.medium)
-                .lineLimit(1)
+        HStack(spacing: Spacing.xs) {
             Text(timeRangeText)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .padding(.trailing, Spacing.xs)
+            Text(placement.task.name)
+                .font(.caption)
+                .fontWeight(.medium)
+                .lineLimit(1)
+                .padding(.trailing, Spacing.xs)
+            if let memo = placement.task.memo, !memo.isEmpty {
+                Text(memo)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .frame(width: max(laneWidth - 4, 0), height: blockHeight, alignment: .leading)
-        .background(Color.primary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.horizontal, Spacing.xs)
+        .padding(.vertical, 2) // 短時間の配置でも収まるよう意図的に小さい値（Spacingスケールより優先）
+        .frame(width: max(laneWidth - Spacing.xs, 0), height: blockHeight, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.primary.opacity(0.3), lineWidth: 1)
+            RoundedRectangle(cornerRadius: CornerRadius.small)
+                .stroke(AppColor.border, lineWidth: 1)
         )
         .contentShape(Rectangle())
         .clipped()

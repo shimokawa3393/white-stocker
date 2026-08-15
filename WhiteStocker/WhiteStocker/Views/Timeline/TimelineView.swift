@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 struct TimelineView: View {
     /// 前後365日をページング範囲とする（無限スクロールは不採用、有限範囲で十分と判断）
@@ -65,8 +66,15 @@ private struct DayTimelineView: View {
     @Query private var placements: [Placement]
     @State private var pickerContext: SlotPickerContext?
     @State private var editingPlacement: Placement?
+    @State private var now: Date = .now
 
     private static let contentLeadingInset: CGFloat = TimelineRowView.labelWidth + TimelineRowView.labelSpacing
+    /// 現在時刻インジケーターの更新用。アプリ全体で1本のタイマーを共有する
+    private static let timeUpdateTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(date)
+    }
 
     init(date: Date) {
         self.date = date
@@ -78,34 +86,58 @@ private struct DayTimelineView: View {
     }
 
     var body: some View {
-        ScrollView {
-            GeometryReader { geometry in
-                ZStack(alignment: .topLeading) {
-                    LazyVStack(spacing: 0) {
-                        ForEach(0..<24, id: \.self) { hour in
-                            TimelineRowView(hour: hour)
-                                .onTapGesture {
+        ScrollViewReader { proxy in
+            ScrollView {
+                GeometryReader { geometry in
+                    ZStack(alignment: .topLeading) {
+                        LazyVStack(spacing: 0) {
+                            ForEach(0..<24, id: \.self) { hour in
+                                Button {
                                     pickerContext = SlotPickerContext(
                                         rowStart: rowDate(hour: hour),
                                         rowEnd: rowDate(hour: hour + 1)
                                     )
+                                } label: {
+                                    TimelineRowView(hour: hour)
                                 }
+                                .buttonStyle(PressableRowStyle())
+                                .id(hour)
+                            }
                         }
-                    }
 
-                    ForEach(PlacementLayout.layout(for: placements), id: \.placement.id) { item in
-                        PlacementBlockView(
-                            layout: item,
-                            contentLeadingInset: Self.contentLeadingInset,
-                            contentWidth: max(geometry.size.width - Self.contentLeadingInset, 0)
-                        )
-                        .onTapGesture {
-                            editingPlacement = item.placement
+                        ForEach(PlacementLayout.layout(for: placements), id: \.placement.id) { item in
+                            Button {
+                                editingPlacement = item.placement
+                            } label: {
+                                PlacementBlockView(
+                                    layout: item,
+                                    contentLeadingInset: Self.contentLeadingInset,
+                                    contentWidth: max(geometry.size.width - Self.contentLeadingInset, 0)
+                                )
+                            }
+                            .buttonStyle(PressableRowStyle())
+                        }
+
+                        if isToday {
+                            CurrentTimeIndicatorView(
+                                contentLeadingInset: Self.contentLeadingInset,
+                                currentTime: now
+                            )
                         }
                     }
                 }
+                .frame(height: TimelineRowView.rowHeight * 24)
             }
-            .frame(height: TimelineRowView.rowHeight * 24)
+            .onAppear {
+                // 今日のページのみ、現在時刻付近を画面中央に自動スクロール。
+                // 上端/下端に近い時刻の場合はScrollViewの範囲制約により自然にその端で止まる。
+                guard isToday else { return }
+                let currentHour = Calendar.current.component(.hour, from: .now)
+                proxy.scrollTo(currentHour, anchor: .center)
+            }
+            .onReceive(Self.timeUpdateTimer) { newTime in
+                now = newTime
+            }
         }
         .sheet(item: $pickerContext) { context in
             SlotPickerSheet(

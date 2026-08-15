@@ -10,6 +10,7 @@ import SwiftData
 
 struct TaskListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
 
     @Query(
         filter: #Predicate<TaskItem> { $0.deletedAt == nil },
@@ -39,6 +40,7 @@ struct TaskListView: View {
                                 taskRow(task)
                             }
                             .buttonStyle(.plain)
+                            .listRowBackground(AppColor.subtleFill)
                         }
                         .onDelete(perform: deleteTasks)
                     }
@@ -46,6 +48,9 @@ struct TaskListView: View {
             }
             .navigationTitle("タスク一覧")
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("閉じる") { dismiss() }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         isPresentingNewTask = true
@@ -64,21 +69,16 @@ struct TaskListView: View {
     }
 
     private func taskRow(_ task: TaskItem) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(task.name)
                 .font(.body)
                 .foregroundStyle(.primary)
-            if let memo = task.memo, !memo.isEmpty {
-                Text(memo)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Text("\(task.durationMin)分")
+            // 一覧が縦に伸びやすいため、メモは表示しない（編集画面でのみ確認できる）
+            Label(DurationFormatter.label(task.durationMin), systemImage: "clock")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }

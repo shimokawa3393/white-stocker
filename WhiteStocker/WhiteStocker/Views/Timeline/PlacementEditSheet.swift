@@ -20,8 +20,6 @@ struct PlacementEditSheet: View {
     @State private var startTime: Date
     @State private var durationMin: Int
 
-    private let quickOptions = [15, 30, 45, 60]
-
     init(placement: Placement, allPlacementsOfDay: [Placement]) {
         self.placement = placement
         self.allPlacementsOfDay = allPlacementsOfDay
@@ -45,6 +43,38 @@ struct PlacementEditSheet: View {
         SlotFinder.maxAvailableDuration(from: startTime, existingPlacements: otherPlacements)
     }
 
+    private let minuteOptions = [0, 15, 30, 45]
+
+    private var hourBinding: Binding<Int> {
+        Binding(
+            get: { Calendar.current.component(.hour, from: startTime) },
+            set: { newHour in
+                startTime = Self.settingComponent(.hour, to: newHour, on: startTime)
+            }
+        )
+    }
+
+    private var minuteBinding: Binding<Int> {
+        Binding(
+            get: { Calendar.current.component(.minute, from: startTime) },
+            set: { newMinute in
+                startTime = Self.settingComponent(.minute, to: newMinute, on: startTime)
+            }
+        )
+    }
+
+    private static func settingComponent(_ component: Calendar.Component, to value: Int, on date: Date) -> Date {
+        let calendar = Calendar.current
+        var hour = calendar.component(.hour, from: date)
+        var minute = calendar.component(.minute, from: date)
+        if component == .hour {
+            hour = value
+        } else if component == .minute {
+            minute = value
+        }
+        return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: date) ?? date
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -53,47 +83,45 @@ struct PlacementEditSheet: View {
                 }
                 Section("開始時刻") {
                     HStack {
-                        Button {
-                            adjustStartTime(by: -15)
-                        } label: {
-                            Image(systemName: "minus.circle")
+                        Picker("時", selection: hourBinding) {
+                            ForEach(0..<24, id: \.self) { hour in
+                                Text(String(format: "%02d", hour)).tag(hour)
+                            }
                         }
-                        Spacer()
-                        Text(timeText(startTime))
-                            .font(.title3)
-                            .monospacedDigit()
-                        Spacer()
-                        Button {
-                            adjustStartTime(by: 15)
-                        } label: {
-                            Image(systemName: "plus.circle")
+                        .pickerStyle(.wheel)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("start-time-hour-picker")
+
+                        Text(":")
+                            .font(.title2)
+
+                        Picker("分", selection: minuteBinding) {
+                            ForEach(minuteOptions, id: \.self) { minute in
+                                Text(String(format: "%02d", minute)).tag(minute)
+                            }
                         }
+                        .pickerStyle(.wheel)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("start-time-minute-picker")
                     }
+                    .frame(height: 120)
                 }
                 Section("所要時間") {
-                    HStack {
-                        ForEach(quickOptions, id: \.self) { minutes in
-                            Button {
-                                durationMin = minutes
-                            } label: {
-                                Text("\(minutes)分")
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(durationMin == minutes ? .accentColor : .secondary)
+                    Picker("所要時間", selection: $durationMin) {
+                        ForEach(DurationFormatter.range, id: \.self) { minutes in
+                            Text(DurationFormatter.label(minutes)).tag(minutes)
                         }
                     }
+                    .pickerStyle(.wheel)
+                    .accessibilityIdentifier("duration-picker")
                 }
                 if hasConflict {
                     Section {
-                        Text("他の配置と時間が重なっています")
-                            .font(.caption)
-                            .foregroundStyle(.red)
+                        WarningLabel(message: "他の配置と時間が重なっています")
                     }
                 } else if durationMin > maxDuration {
                     Section {
-                        Text("この開始時刻では最大\(maxDuration)分までしか確保できません")
-                            .font(.caption)
-                            .foregroundStyle(.red)
+                        WarningLabel(message: "この開始時刻では最大\(maxDuration)分までしか確保できません")
                     }
                 }
                 Section {
@@ -114,21 +142,6 @@ struct PlacementEditSheet: View {
                 }
             }
         }
-    }
-
-    private func adjustStartTime(by minutes: Int) {
-        let calendar = Calendar.current
-        guard let newStart = calendar.date(byAdding: .minute, value: minutes, to: startTime) else { return }
-        let startOfDay = calendar.startOfDay(for: placement.date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
-        guard newStart >= startOfDay, newStart < endOfDay else { return }
-        startTime = newStart
-    }
-
-    private func timeText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
     }
 
     private func save() {

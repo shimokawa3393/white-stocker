@@ -76,7 +76,7 @@ struct SlotPickerSheet: View {
                     Button {
                         path.append(.taskPicker(slotStart: slot.start))
                     } label: {
-                        Text(slotLabel(slot))
+                        Label(slotLabel(slot), systemImage: "clock")
                     }
                 }
             }
@@ -104,11 +104,13 @@ struct SlotPickerSheet: View {
                     Button {
                         path.append(.durationConfirm(slotStart: slotStart, task: task))
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
                             Text(task.name)
-                            Text("\(task.durationMin)分")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                            Label(DurationFormatter.label(task.durationMin), systemImage: "clock")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -152,8 +154,6 @@ private struct DurationConfirmView: View {
 
     @State private var durationMin: Int
 
-    private let quickOptions = [15, 30, 45, 60]
-
     init(
         slotStart: Date,
         task: TaskItem,
@@ -176,27 +176,19 @@ private struct DurationConfirmView: View {
             Section {
                 LabeledContent("タスク", value: task.name)
                 LabeledContent("開始", value: timeText(slotStart))
-                LabeledContent("所要時間", value: "\(durationMin)分")
             }
-            Section("所要時間を変更") {
-                HStack {
-                    ForEach(quickOptions, id: \.self) { minutes in
-                        Button {
-                            durationMin = minutes
-                        } label: {
-                            Text("\(minutes)分")
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(durationMin == minutes ? .accentColor : .secondary)
-                        .disabled(minutes > maxDuration)
+            Section("所要時間") {
+                Picker("所要時間", selection: $durationMin) {
+                    ForEach(DurationFormatter.range, id: \.self) { minutes in
+                        Text(DurationFormatter.label(minutes)).tag(minutes)
                     }
                 }
+                .pickerStyle(.wheel)
+                .accessibilityIdentifier("duration-picker")
             }
             if durationMin > maxDuration {
                 Section {
-                    Text("この開始時刻では最大\(maxDuration)分までしか確保できません")
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                    WarningLabel(message: "この開始時刻では最大\(maxDuration)分までしか確保できません")
                 }
             }
         }
