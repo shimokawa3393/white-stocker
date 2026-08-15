@@ -10,6 +10,12 @@ import SwiftData
 
 @main
 struct WhiteStockerApp: App {
+    @AppStorage("colorSchemePreference") private var colorSchemePreferenceRaw: String = AppColorSchemePreference.system.rawValue
+
+    private var colorSchemePreference: AppColorSchemePreference {
+        AppColorSchemePreference(rawValue: colorSchemePreferenceRaw) ?? .system
+    }
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             TaskItem.self,
@@ -27,6 +33,7 @@ struct WhiteStockerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .preferredColorScheme(colorSchemePreference.colorScheme)
         }
         .modelContainer(sharedModelContainer)
     }

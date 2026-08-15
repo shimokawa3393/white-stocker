@@ -40,10 +40,18 @@ struct TaskListView: View {
                                 taskRow(task)
                             }
                             .buttonStyle(.plain)
-                            .listRowBackground(AppColor.subtleFill)
+                            // 各行を独立したカードとして見せる。同じ背景色が隙間なく続くと
+                            // 行同士が繋がって見えてしまうため、角丸背景＋上下の余白で区切る。
+                            .listRowBackground(
+                                CardBackground(cornerRadius: CornerRadius.medium, fill: AppColor.subtleFill)
+                                    .padding(.vertical, Spacing.xs)
+                                    .padding(.horizontal, Spacing.md)
+                            )
+                            .listRowSeparator(.hidden)
                         }
                         .onDelete(perform: deleteTasks)
                     }
+                    .listStyle(.plain)
                 }
             }
             .navigationTitle("タスク一覧")
@@ -76,9 +84,10 @@ struct TaskListView: View {
             // 一覧が縦に伸びやすいため、メモは表示しない（編集画面でのみ確認できる）
             Label(DurationFormatter.label(task.durationMin), systemImage: "clock")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
         }
-        .padding(.vertical, Spacing.xs)
+        .padding(.vertical, Spacing.sm)
+        .padding(.horizontal, Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }

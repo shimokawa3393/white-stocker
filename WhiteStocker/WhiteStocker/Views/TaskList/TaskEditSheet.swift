@@ -60,6 +60,9 @@ struct TaskEditSheet: View {
                     .pickerStyle(.wheel)
                 }
             }
+            // ドラッグ操作でキーボードが追従して閉じるようにする。Formは背景全体に
+            // 直接タップジェスチャーを仕込むのが技術的に難しいため、この標準APIで対応する。
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(editingTask == nil ? "タスクを追加" : "タスクを編集")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

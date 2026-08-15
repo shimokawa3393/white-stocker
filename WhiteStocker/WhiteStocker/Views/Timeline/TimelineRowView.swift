@@ -12,10 +12,10 @@ struct TimelineRowView: View {
     let hour: Int
 
     /// 1時間あたりの高さ(pt)。PlacementBlockViewの絶対配置計算の基準値として共有する。
-    static let rowHeight: CGFloat = 60
+    static let rowHeight: CGFloat = 90
     /// 時刻ラベル幅 + spacing。PlacementBlockViewのcontentLeadingInsetと一致させる。
     static let labelWidth: CGFloat = 44
-    static let labelSpacing: CGFloat = Spacing.sm
+    static let labelSpacing: CGFloat = Spacing.md
 
     var body: some View {
         ZStack(alignment: .topLeading) {

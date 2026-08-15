@@ -77,7 +77,19 @@ struct SlotPickerSheet: View {
                         path.append(.taskPicker(slotStart: slot.start))
                     } label: {
                         Label(slotLabel(slot), systemImage: "clock")
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, Spacing.sm)
+                            .padding(.horizontal, Spacing.md)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .listRowBackground(
+                        CardBackground(cornerRadius: CornerRadius.medium, fill: AppColor.subtleFill)
+                            .padding(.vertical, Spacing.xs)
+                            .padding(.horizontal, Spacing.md)
+                    )
+                    .listRowSeparator(.hidden)
                 }
             }
         }
@@ -110,9 +122,20 @@ struct SlotPickerSheet: View {
                                 .foregroundStyle(.primary)
                             Label(DurationFormatter.label(task.durationMin), systemImage: "clock")
                                 .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.secondary)
                         }
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.horizontal, Spacing.md)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .listRowBackground(
+                        CardBackground(cornerRadius: CornerRadius.medium, fill: AppColor.subtleFill)
+                            .padding(.vertical, Spacing.xs)
+                            .padding(.horizontal, Spacing.md)
+                    )
+                    .listRowSeparator(.hidden)
                 }
             }
         }
