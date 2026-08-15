@@ -49,6 +49,11 @@ enum SlotFinder {
         }
     }
 
+    /// 指定区間が既存Placement群のいずれかと重なるかどうか。配置の編集時の妥当性チェックに使う。
+    static func hasConflict(start: Date, end: Date, existingPlacements: [Placement]) -> Bool {
+        existingPlacements.contains { $0.startTime < end && $0.endTime > start }
+    }
+
     /// 指定開始時刻から見て、次の既存Placementにぶつかるまで（またはその日の終わりまで）に
     /// 確保できる最大分数を返す。durationのクイック上書き時の妥当性チェックに使う。
     static func maxAvailableDuration(

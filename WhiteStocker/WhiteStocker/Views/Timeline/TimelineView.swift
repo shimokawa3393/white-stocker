@@ -5,9 +5,6 @@
 //  ホーム画面。縦は1時間刻みRow（ScrollView）、横は日付ページング（TabView.page）。
 //  カレンダーピッカー等の遠距離ジャンプは持たない（横スクロールのみ、設計書で明示的に不採用）。
 //
-//  この段階（Step4）ではPlacementの配置ブロック描画・タップ配置フローはまだ無い。
-//  表示のみで、配置ゼロの見た目を作る。配置ブロックはStep6（PlacementBlockView）で追加する。
-//
 
 import SwiftUI
 import SwiftData
@@ -65,17 +62,77 @@ struct TimelineView: View {
 private struct DayTimelineView: View {
     let date: Date
 
+    @Query private var placements: [Placement]
+    @State private var pickerContext: SlotPickerContext?
+    @State private var editingPlacement: Placement?
+
+    private static let contentLeadingInset: CGFloat = TimelineRowView.labelWidth + TimelineRowView.labelSpacing
+
+    init(date: Date) {
+        self.date = date
+        let normalizedDate = Calendar.current.startOfDay(for: date)
+        _placements = Query(
+            filter: #Predicate<Placement> { $0.date == normalizedDate },
+            sort: \Placement.startTime
+        )
+    }
+
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(0..<24, id: \.self) { hour in
-                    TimelineRowView(hour: hour)
+            GeometryReader { geometry in
+                ZStack(alignment: .topLeading) {
+                    LazyVStack(spacing: 0) {
+                        ForEach(0..<24, id: \.self) { hour in
+                            TimelineRowView(hour: hour)
+                                .onTapGesture {
+                                    pickerContext = SlotPickerContext(
+                                        rowStart: rowDate(hour: hour),
+                                        rowEnd: rowDate(hour: hour + 1)
+                                    )
+                                }
+                        }
+                    }
+
+                    ForEach(PlacementLayout.layout(for: placements), id: \.placement.id) { item in
+                        PlacementBlockView(
+                            layout: item,
+                            contentLeadingInset: Self.contentLeadingInset,
+                            contentWidth: max(geometry.size.width - Self.contentLeadingInset, 0)
+                        )
+                        .onTapGesture {
+                            editingPlacement = item.placement
+                        }
+                    }
                 }
             }
-            // TODO: Step6でこのZStack上にPlacementBlockViewを絶対配置で重ねる
-            // （「タップ判定＝1Row」と「見た目＝時間軸比例配置」を分離するため）
+            .frame(height: TimelineRowView.rowHeight * 24)
+        }
+        .sheet(item: $pickerContext) { context in
+            SlotPickerSheet(
+                rowStart: context.rowStart,
+                rowEnd: context.rowEnd,
+                date: normalizedDate,
+                existingPlacements: placements
+            )
+        }
+        .sheet(item: $editingPlacement) { placement in
+            PlacementEditSheet(placement: placement, allPlacementsOfDay: placements)
         }
     }
+
+    private var normalizedDate: Date {
+        Calendar.current.startOfDay(for: date)
+    }
+
+    private func rowDate(hour: Int) -> Date {
+        Calendar.current.date(byAdding: .hour, value: hour, to: normalizedDate) ?? normalizedDate
+    }
+}
+
+private struct SlotPickerContext: Identifiable {
+    let id = UUID()
+    let rowStart: Date
+    let rowEnd: Date
 }
 
 #Preview {

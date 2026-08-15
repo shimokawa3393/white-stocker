@@ -13,23 +13,29 @@ struct TimelineRowView: View {
 
     /// 1時間あたりの高さ(pt)。PlacementBlockViewの絶対配置計算の基準値として共有する。
     static let rowHeight: CGFloat = 60
+    /// 時刻ラベル幅 + spacing。PlacementBlockViewのcontentLeadingInsetと一致させる。
+    static let labelWidth: CGFloat = 44
+    static let labelSpacing: CGFloat = 8
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text(String(format: "%02d:00", hour))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .frame(width: 44, alignment: .trailing)
-
+        ZStack(alignment: .topLeading) {
+            // 罫線はRow上端（=正確にその時刻）にぴったり合わせる。
+            // PlacementBlockViewのY座標計算がこの位置を基準にしているため、
+            // ここにpaddingを掛けるとブロックの表示位置とズレる。
             Rectangle()
                 .fill(Color.secondary.opacity(0.2))
                 .frame(height: 1)
+                .padding(.leading, Self.labelWidth + Self.labelSpacing)
+
+            Text(String(format: "%02d:00", hour))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(width: Self.labelWidth, alignment: .trailing)
+                .offset(y: -6) // 罫線の位置を基準に、ラベルの見た目だけ少し持ち上げる
         }
-        .padding(.top, 6)
         .frame(height: Self.rowHeight, alignment: .top)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        // TODO: Step6でタップ時に空きスロット提示（SlotPickerSheet）へ繋ぐ
     }
 }
 
