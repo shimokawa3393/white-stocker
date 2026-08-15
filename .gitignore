@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Xcode
+WhiteStocker/WhiteStocker.xcodeproj/xcuserdata/
+WhiteStocker/WhiteStocker.xcodeproj/project.xcworkspace/xcuserdata/
+WhiteStocker/DerivedData/
+WhiteStocker/build/
+*.xcuserstate
