@@ -27,7 +27,7 @@ struct CardBackground<Fill: ShapeStyle>: View {
             // 近い・鋭いコンタクトシャドウと、遠い・柔らかく広がるシャドウの2層で
             // 単純な1層シャドウより自然な浮遊感を出す。塗り・枠線の色は濃くしたくないが
             // 視認性は上げたいという要望のため、色とは別軸のシャドウ側で強める。
-            .shadow(color: .black.opacity(0.18), radius: 1, x: 0, y: 1)
-            .shadow(color: .black.opacity(0.16), radius: 6, x: 0, y: 3)
+            .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
+            .shadow(color: .black.opacity(0.10), radius: 5, x: 0, y: 2)
     }
 }

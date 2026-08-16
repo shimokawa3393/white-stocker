@@ -14,7 +14,7 @@ struct TaskListView: View {
 
     @Query(
         filter: #Predicate<TaskItem> { $0.deletedAt == nil },
-        sort: \TaskItem.createdAt,
+        sort: \TaskItem.lastUsedAt,
         order: .reverse
     )
     private var tasks: [TaskItem]
@@ -44,14 +44,13 @@ struct TaskListView: View {
                             // 行同士が繋がって見えてしまうため、角丸背景＋上下の余白で区切る。
                             .listRowBackground(
                                 CardBackground(cornerRadius: CornerRadius.medium, fill: AppColor.subtleFill)
-                                    .padding(.vertical, Spacing.xs)
+                                    .padding(.vertical, Spacing.sm)
                                     .padding(.horizontal, Spacing.md)
                             )
                             .listRowSeparator(.hidden)
                         }
                         .onDelete(perform: deleteTasks)
                     }
-                    .listStyle(.plain)
                 }
             }
             .navigationTitle("タスク一覧")
@@ -79,11 +78,12 @@ struct TaskListView: View {
     private func taskRow(_ task: TaskItem) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(task.name)
-                .font(.body)
+                .font(.title3)
                 .foregroundStyle(.primary)
             // 一覧が縦に伸びやすいため、メモは表示しない（編集画面でのみ確認できる）
             Label(DurationFormatter.label(task.durationMin), systemImage: "clock")
                 .font(.caption2)
+                .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, Spacing.sm)

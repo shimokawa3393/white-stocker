@@ -30,10 +30,15 @@ struct PlacementBlockView {
         return calendar.dateComponents([.minute], from: startOfDay, to: placement.startTime).minute ?? 0
     }
 
+    /// 隣接する配置同士（終了時刻＝次の開始時刻）が背景ごとぴったり接して見えるのを避けるため、
+    /// 上下均等に切り詰めて隙間を作る。上端がblockGap/2だけ正確な開始時刻より下にずれるが、
+    /// 視覚的な対称性を優先する（ズレはごくわずかで実用上問題にならない）。
+    private static let blockGap: CGFloat = 3
+
     /// Button側でoffset適用するために公開する（PlacementBlockView内部でoffsetすると、
     /// Buttonのタップ領域がoffset適用前のフレーム位置で計算されてしまいタップできなくなるため）
     var yOffset: CGFloat {
-        CGFloat(minutesFromStartOfDay) * (TimelineRowView.rowHeight / 60)
+        CGFloat(minutesFromStartOfDay) * (TimelineRowView.rowHeight / 60) + Self.blockGap / 2
     }
 
     var xOffset: CGFloat {
@@ -43,7 +48,7 @@ struct PlacementBlockView {
     /// 時間軸に厳密に比例させる。下限クランプを設けると短い配置が実際の時間帯をはみ出して
     /// 描画されてしまうため、最小高さの底上げはしない（窮屈さの緩和はpadding/フォント側で行う）。
     private var blockHeight: CGFloat {
-        CGFloat(placement.durationMin) * (TimelineRowView.rowHeight / 60)
+        max(CGFloat(placement.durationMin) * (TimelineRowView.rowHeight / 60) - Self.blockGap, 4)
     }
 
     private var laneWidth: CGFloat {
@@ -79,6 +84,7 @@ struct PlacementBlockView {
         HStack(spacing: Spacing.xs) {
             Text(timeRangeText)
                 .font(.caption2)
+                .fontWeight(.semibold)
                 .foregroundStyle(AppColor.secondaryText)
                 .lineLimit(1)
                 .padding(.trailing, Spacing.xs)

@@ -22,9 +22,9 @@ enum Spacing {
 /// 角丸の基準値。
 enum CornerRadius {
     /// ブロック・チップなど、小さめの要素
-    static let small: CGFloat = 7
+    static let small: CGFloat = 3
     /// カード・シートのコンテナなど
-    static let medium: CGFloat = 10
+    static let medium: CGFloat = 5
 }
 
 /// モノトーン方針の中での色階調。用途ごとに意味を持たせて命名する。
@@ -42,8 +42,8 @@ enum AppColor {
     /// 選択の濃淡差が目立ちすぎるため、こちらも合わせて薄くしている。
     static let subtleFill = Color(UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(white: 0.14, alpha: 1.0)
-            : UIColor(white: 0.95, alpha: 1.0)
+            ? UIColor(white: 0.18, alpha: 1.0)
+            : UIColor(white: 0.92, alpha: 1.0)
     })
 
     /// 配置ブロックなど、主役として少し強めに浮かせたい要素の塗り（subtleFillより一段濃い）。不透明。
@@ -53,13 +53,13 @@ enum AppColor {
         colors: [
             Color(UIColor { traits in
                 traits.userInterfaceStyle == .dark
-                    ? UIColor(white: 0.10, alpha: 1.0)
-                    : UIColor(white: 0.97, alpha: 1.0)
+                    ? UIColor(white: 0.13, alpha: 1.0)
+                    : UIColor(white: 0.94, alpha: 1.0)
             }),
             Color(UIColor { traits in
                 traits.userInterfaceStyle == .dark
-                    ? UIColor(white: 0.08, alpha: 1.0)
-                    : UIColor(white: 0.95, alpha: 1.0)
+                    ? UIColor(white: 0.11, alpha: 1.0)
+                    : UIColor(white: 0.92, alpha: 1.0)
             }),
         ],
         startPoint: .top,

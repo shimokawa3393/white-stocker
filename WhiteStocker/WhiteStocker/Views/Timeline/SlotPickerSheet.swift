@@ -19,7 +19,7 @@ struct SlotPickerSheet: View {
 
     @Query(
         filter: #Predicate<TaskItem> { $0.deletedAt == nil },
-        sort: \TaskItem.createdAt,
+        sort: \TaskItem.lastUsedAt,
         order: .reverse
     )
     private var tasks: [TaskItem]
@@ -76,17 +76,25 @@ struct SlotPickerSheet: View {
                     Button {
                         path.append(.taskPicker(slotStart: slot.start))
                     } label: {
-                        Label(slotLabel(slot), systemImage: "clock")
-                            .foregroundStyle(.primary)
-                            .padding(.vertical, Spacing.sm)
-                            .padding(.horizontal, Spacing.md)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
+                        // chevronは「タップすると次のステップへ進む」選択画面であることを示す
+                        // ヒント。タスク一覧（編集操作）には付けず、選択系の画面にのみ統一する。
+                        HStack {
+                            Label(slotLabel(slot), systemImage: "clock")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.horizontal, Spacing.md)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .listRowBackground(
                         CardBackground(cornerRadius: CornerRadius.medium, fill: AppColor.subtleFill)
-                            .padding(.vertical, Spacing.xs)
+                            .padding(.vertical, Spacing.sm)
                             .padding(.horizontal, Spacing.md)
                     )
                     .listRowSeparator(.hidden)
@@ -116,13 +124,20 @@ struct SlotPickerSheet: View {
                     Button {
                         path.append(.durationConfirm(slotStart: slotStart, task: task))
                     } label: {
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text(task.name)
-                                .font(.body)
-                                .foregroundStyle(.primary)
-                            Label(DurationFormatter.label(task.durationMin), systemImage: "clock")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                        HStack {
+                            VStack(alignment: .leading, spacing: Spacing.xs) {
+                                Text(task.name)
+                                    .font(.title3)
+                                    .foregroundStyle(.primary)
+                                Label(DurationFormatter.label(task.durationMin), systemImage: "clock")
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         }
                         .padding(.vertical, Spacing.sm)
                         .padding(.horizontal, Spacing.md)
@@ -132,7 +147,7 @@ struct SlotPickerSheet: View {
                     .buttonStyle(.plain)
                     .listRowBackground(
                         CardBackground(cornerRadius: CornerRadius.medium, fill: AppColor.subtleFill)
-                            .padding(.vertical, Spacing.xs)
+                            .padding(.vertical, Spacing.sm)
                             .padding(.horizontal, Spacing.md)
                     )
                     .listRowSeparator(.hidden)
@@ -159,6 +174,8 @@ struct SlotPickerSheet: View {
     private func createPlacement(task: TaskItem, start: Date, durationMin: Int) {
         let placement = Placement(task: task, date: date, startTime: start, durationMin: durationMin)
         modelContext.insert(placement)
+        // 一覧・選択画面の並び順（最終使用順）に反映させる
+        task.lastUsedAt = .now
         dismiss()
     }
 

@@ -20,6 +20,13 @@ final class TaskItem {
     /// デフォルト所要時間（分）。Placement生成時の初期値として使われる
     var durationMin: Int
     var createdAt: Date
+    /// 一覧・選択画面の並び順に使う最終使用時刻。配置（Placement）作成時に更新する。
+    /// 一度も使われていないタスクはcreatedAtと同値のままにしておくことで、
+    /// 未使用のタスク同士は自然に作成順で並ぶ（Optionalにしてnil比較の複雑さを避ける設計）。
+    /// 宣言時にデフォルト値を持たせるのはSwiftDataの軽量マイグレーション要件のため
+    /// （イニシャライザ内の代入だけでは既存ストアとのスキーマ差分を自動解決できず、
+    /// ModelContainer生成時にfatalErrorでクラッシュする）。
+    var lastUsedAt: Date = Date.now
     /// 論理削除フラグ。物理削除はしない（過去のPlacementが参照切れを起こさないため）
     var deletedAt: Date?
 
@@ -34,6 +41,7 @@ final class TaskItem {
         self.memo = memo
         self.durationMin = durationMin
         self.createdAt = createdAt
+        self.lastUsedAt = createdAt
         self.deletedAt = nil
     }
 
